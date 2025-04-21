@@ -1,0 +1,83 @@
+if (!window.textboxExists) { 
+    window.textboxExists = true; 
+
+    const container = document.createElement("div");
+    container.style.cssText = "position: fixed; top: 20px; left: 20px; background-color: #222; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); z-index: 9999; display: flex; gap: 10px; align-items: center; cursor: move; flex-direction: column;";
+
+    const header = document.createElement("div");
+    header.style.cssText = "display: flex; justify-content: space-between; width: 100%;";
+    header.innerHTML = `<span style="color: white;">Majesty's Automod Bypass</span>`;
+
+    const closeButton = document.createElement("button");
+    closeButton.innerText = "X";
+    closeButton.style.cssText = "background-color: red; color: white; border: none; padding: 5px; cursor: pointer;";
+    closeButton.onclick = () => {
+        container.remove();
+        window.textboxExists = false; // Allow creating a new one
+    };
+
+    const textbox = document.createElement("input");
+    textbox.type = "text";
+    textbox.placeholder = "Type your message...";
+    textbox.style.cssText = "background-color: #333; color: white; border: 1px solid #555; padding: 10px; width: 300px;";
+
+    const button = document.createElement("button");
+    button.innerText = "Send";
+    button.style.cssText = "background-color: #555; color: white; border: none; padding: 10px; cursor: pointer;";
+    button.onclick = () => {
+        if (textbox.value.trim() !== "") {
+            function insertLetter(text, letter) {
+                return text.split("").map(char => char + letter).join("");
+            }
+
+            // Example usage
+            let text = textbox.value;
+            let letter = "‪";
+            let result = insertLetter(text, letter);
+            console.log(result);
+            fetch(`https://discord.com/api/v9/channels/${window.location.pathname.split("/")[3]}/messages`, {
+                method: "POST",
+                headers: {
+                    "Authorization": (webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken(),
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    content: result,
+                    tts: false
+                })
+            });
+            textbox.value = ""; // Clear textbox
+        }
+    };
+
+    // Ensure it stays within screen bounds while dragging
+    container.onmousedown = (event) => {
+        let offsetX = event.clientX - container.offsetLeft;
+        let offsetY = event.clientY - container.offsetTop;
+
+        function mouseMoveHandler(e) {
+            let newX = Math.max(0, Math.min(window.innerWidth - container.clientWidth, e.clientX - offsetX));
+            let newY = Math.max(0, Math.min(window.innerHeight - container.clientHeight, e.clientY - offsetY));
+
+            container.style.left = `${newX}px`;
+            container.style.top = `${newY}px`;
+        }
+
+        function mouseUpHandler() {
+            document.removeEventListener("mousemove", mouseMoveHandler);
+            document.removeEventListener("mouseup", mouseUpHandler);
+        }
+
+        document.addEventListener("mousemove", mouseMoveHandler);
+        document.addEventListener("mouseup", mouseUpHandler);
+    };
+
+    // Append elements
+    header.appendChild(closeButton);
+    container.appendChild(header);
+    container.appendChild(textbox);
+    container.appendChild(button);
+    document.body.appendChild(container);
+    document.body.style.backgroundColor = "#121212";
+    document.body.style.color = "white";
+}
