@@ -1,5 +1,31 @@
-if (!window.textboxExists) { 
-    window.textboxExists = true; 
+if (!window.textboxExists) {
+    window.textboxExists = true;
+
+    function insertLetter(text, letter) {
+        const regex = /<[^>]*>|:[^:]+:|https?:\/\/[^\s]+/gi;
+
+        let result = '';
+        let lastIndex = 0;
+
+        // Find all matches to skip
+        text.replace(regex, (match, offset) => {
+            // Add the part before the match with Z's
+            const unprotectedPart = text.slice(lastIndex, offset);
+            result += unprotectedPart.split('').map(char => char + letter).join('');
+
+            // Add the protected match untouched
+            result += match;
+
+            // Move the index forward
+            lastIndex = offset + match.length;
+        });
+
+        // Handle any remaining text after the last match
+        const remaining = text.slice(lastIndex);
+        result += remaining.split('').map(char => char + letter).join('');
+
+        return result;
+    }
 
     const container = document.createElement("div");
     container.style.cssText = "position: fixed; top: 20px; left: 20px; background-color: #222; padding: 15px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); z-index: 9999; display: flex; gap: 10px; align-items: center; cursor: move; flex-direction: column;";
@@ -13,7 +39,7 @@ if (!window.textboxExists) {
     closeButton.style.cssText = "background-color: red; color: white; border: none; padding: 5px; cursor: pointer;";
     closeButton.onclick = () => {
         container.remove();
-        window.textboxExists = false; // Allow creating a new one
+        window.textboxExists = false;
     };
 
     const textbox = document.createElement("input");
@@ -21,36 +47,51 @@ if (!window.textboxExists) {
     textbox.placeholder = "Type your message...";
     textbox.style.cssText = "background-color: #333; color: white; border: 1px solid #555; padding: 10px; width: 300px;";
 
+    const sharedButtonStyle = "background-color: #555; color: white; border: none; padding: 10px; cursor: pointer;";
+
     const button = document.createElement("button");
     button.innerText = "Send";
-    button.style.cssText = "background-color: #555; color: white; border: none; padding: 10px; cursor: pointer;";
+    button.style.cssText = sharedButtonStyle;
     button.onclick = () => {
         if (textbox.value.trim() !== "") {
-            function insertLetter(text, letter) {
-                return text.split("").map(char => char + letter).join("");
-            }
-
-            // Example usage
             let text = textbox.value;
             let letter = "‪";
+
             let result = insertLetter(text, letter);
             console.log(result);
+
+            const replying = document.querySelector('.replying__5126c');
+            let messageId = 0;
+            if (replying) {
+                const fullmessageId = replying.getAttribute('data-list-item-id');
+                messageId = fullmessageId.split('-').pop();
+                console.log(`replying message ID: ${messageId}`);
+            } else {
+                console.log("not replying");
+            }
+
+            const bodyContent = {
+                content: result,
+                tts: false
+            };
+
+            if (messageId !== 0) {
+                bodyContent.message_reference = { message_id: messageId };
+            }
+
             fetch(`https://discord.com/api/v9/channels/${window.location.pathname.split("/")[3]}/messages`, {
                 method: "POST",
                 headers: {
-                    "Authorization": (webpackChunkdiscord_app.push([[''],{},e=>{m=[];for(let c in e.c)m.push(e.c[c])}]),m).find(m=>m?.exports?.default?.getToken!==void 0).exports.default.getToken(),
+                    "Authorization": (webpackChunkdiscord_app.push([[''], {}, e => { m = []; for (let c in e.c) m.push(e.c[c]) }]), m).find(m => m?.exports?.default?.getToken !== void 0).exports.default.getToken(),
                     "Content-Type": "application/json"
                 },
-                body: JSON.stringify({
-                    content: result,
-                    tts: false
-                })
+                body: JSON.stringify(bodyContent)
             });
-            textbox.value = ""; // Clear textbox
+
+            textbox.value = "";
         }
     };
 
-    // Ensure it stays within screen bounds while dragging
     container.onmousedown = (event) => {
         let offsetX = event.clientX - container.offsetLeft;
         let offsetY = event.clientY - container.offsetTop;
@@ -58,7 +99,6 @@ if (!window.textboxExists) {
         function mouseMoveHandler(e) {
             let newX = Math.max(0, Math.min(window.innerWidth - container.clientWidth, e.clientX - offsetX));
             let newY = Math.max(0, Math.min(window.innerHeight - container.clientHeight, e.clientY - offsetY));
-
             container.style.left = `${newX}px`;
             container.style.top = `${newY}px`;
         }
@@ -72,11 +112,14 @@ if (!window.textboxExists) {
         document.addEventListener("mouseup", mouseUpHandler);
     };
 
-    // Append elements
+    const buttonRow = document.createElement("div");
+    buttonRow.style.cssText = "display: flex; gap: 10px;";
+    buttonRow.appendChild(button);
+
     header.appendChild(closeButton);
     container.appendChild(header);
     container.appendChild(textbox);
-    container.appendChild(button);
+    container.appendChild(buttonRow);
     document.body.appendChild(container);
     document.body.style.backgroundColor = "#121212";
     document.body.style.color = "white";
