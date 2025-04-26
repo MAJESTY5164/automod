@@ -1,0 +1,243 @@
+(function () {
+    if (window.textboxExists) return;
+    window.textboxExists = true;
+    window.status = true;
+
+    function hide() {
+        wrapper.style.display = 'none';
+    }
+
+    // Main container
+    const wrapper = document.createElement('div');
+    Object.assign(wrapper.style, {
+        position: 'fixed', top: '15%', left: '50%', transform: 'translateX(-50%)',
+        width: '550px', height: '360px',
+        background: '#2c2f33', color: 'white', borderRadius: '12px',
+        display: 'flex', flexDirection: 'column', boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        zIndex: 10000, fontFamily: 'Segoe UI, sans-serif', overflow: 'hidden', boxSizing: 'border-box'
+    });
+    document.body.appendChild(wrapper);
+
+    // Title bar
+    const titleBar = document.createElement('div');
+    Object.assign(titleBar.style, {
+        background: '#202225', padding: '12px', fontSize: '16px', fontWeight: '600',
+        fontStyle: 'italic', textAlign: 'center', borderBottom: '1px solid #444',
+        userSelect: 'none', position: 'relative', cursor: 'move'
+    });
+    titleBar.innerText = "Automod Bypasser";
+    wrapper.appendChild(titleBar);
+
+    // Sidebar
+    const contentWrapper = document.createElement('div');
+    Object.assign(contentWrapper.style, { display: 'flex', flex: '1', height: '100%', boxSizing: 'border-box' });
+    wrapper.appendChild(contentWrapper);
+
+    const sidebar = document.createElement('div');
+    Object.assign(sidebar.style, {
+        width: '130px', background: '#23272a', display: 'flex', flexDirection: 'column',
+        borderRight: '1px solid #444', boxSizing: 'border-box'
+    });
+    contentWrapper.appendChild(sidebar);
+
+    window.enableGui = function () {
+        window.status = true;
+        wrapper.style.display = 'flex'; // Show the UI
+        console.log('GUI enabled');
+    }
+
+    window.disableGui = function () {
+        window.status = false;
+        wrapper.style.display = 'none'; // Hide the UI
+        console.log('GUI disabled');
+    }
+
+    const contentArea = document.createElement('div');
+    Object.assign(contentArea.style, { flex: '1', padding: '8px 14px', overflowY: 'auto', boxSizing: 'border-box' });
+    contentWrapper.appendChild(contentArea);
+
+    // Tabs
+    const tabNamesWithEmojis = {
+        Home: '🏠 Home',
+        Bypasser: '🔓 Bypasser',
+        Credits: '🎉 Credits'
+    };
+
+    const tabs = ['Home', 'Bypasser', 'Credits'];
+    const contentSections = {};
+    const tabButtons = {};
+
+    // Content Setup
+    const contentRenderers = {
+        Home: () => {
+            contentSections.Home.innerHTML = `
+                <h2 style="margin:0 0 8px; font-size: 20px; font-weight: bold;">Welcome!</h2>
+                <p>Thanks for choosing our automod bypasser, we hope you enjoy!</p>
+            `;
+        },
+        Bypasser: () => {
+            contentSections.Bypasser.innerHTML = `
+                <h2 style="margin:0 0 8px; font-size: 20px; font-weight: bold;">Bypasser</h2>
+                <p>Use the input box below to bypass automod filters.</p>
+                <input id="bypassInput" type="text" placeholder="Type your message..." style="width: 95%; padding: 8px; border-radius: 6px; border: 1px solid #444; background: #36393f; color: white; font-size: 14px; outline: none;" />
+                <button id="sendBypass" style="margin-top: 10px; width: 100%; padding: 8px; background: #5865f2; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;">Send Bypassed Message</button>
+                <button id="copyToClipboard" style="margin-top: 8px; width: 100%; padding: 8px; background: #4f545c; border: none; border-radius: 6px; color: white; font-weight: bold; font-size: 13px; cursor: pointer;">Copy to Clipboard</button>
+            `;
+            
+            const bypassInput = document.getElementById('bypassInput');
+            const sendButton = document.getElementById('sendBypass');
+            const copyButton = document.getElementById('copyToClipboard');
+
+            sendButton.addEventListener('click', () => {
+                let discordInput = document.querySelector('span[data-slate-string="true"]');
+                let text = bypassInput.value.trim();
+
+                if (!text) {
+                    if (discordInput && discordInput.innerText.trim() !== "") {
+                        text = discordInput.innerText.trim();
+                    }
+                }
+
+                if (!text) return;
+
+                let letter = "\u202C";
+                let result = insertLetter(text, letter);
+
+                let replying = document.querySelector('.replying__5126c');
+                let messageId = null;
+
+                if (replying) {
+                    const fullMessageId = replying.getAttribute('data-list-item-id');
+                    messageId = fullMessageId.split('-').pop();
+                }
+
+                let token = (
+                    webpackChunkdiscord_app.push([[''], {}, e => { m = []; for (let c in e.c) m.push(e.c[c]) }]), m
+                ).find(x => x?.exports?.default?.getToken !== void 0).exports.default.getToken();
+
+                let channelId = window.location.pathname.split("/")[3];
+                let bodyContent = {
+                    content: result,
+                    tts: false
+                };
+                if (messageId) {
+                    bodyContent.message_reference = { message_id: messageId };
+                }
+
+                fetch(`https://discord.com/api/v9/channels/${channelId}/messages`, {
+                    method: "POST",
+                    headers: {
+                        "Authorization": token,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(bodyContent)
+                });
+
+                bypassInput.value = '';
+            });
+
+            copyButton.addEventListener('click', () => {
+                const original = bypassInput.value.trim();
+                if (!original) return;
+
+                const letter = "\u202C";
+                const modified = insertLetter(original, letter);
+
+                bypassInput.value = modified;
+                bypassInput.select();
+                document.execCommand('copy');
+                bypassInput.value = original;
+            });
+        },
+        Credits: () => {
+            contentSections.Credits.innerHTML = `
+                <h2 style="margin:0 0 8px; font-size: 20px; font-weight: bold;">Credits</h2>
+                <p>Creator: Majesty (majesty5164)</p>
+                <p>Co-Creator/UI Dev: Cheezit (szcx6)</p>
+                <p>Special thanks to contributors.</p>
+            `;
+        }
+    };
+
+    // Create Tabs/Content
+    tabs.forEach((tab, idx) => {
+        // Button
+        const btn = document.createElement('button');
+        btn.innerText = tabNamesWithEmojis[tab];
+        Object.assign(btn.style, {
+            background: 'none', border: 'none', color: 'white', padding: '10px 16px',
+            textAlign: 'left', width: '100%', fontSize: '14px', fontWeight: 'bold',
+            cursor: 'pointer', transition: 'background 0.2s', boxSizing: 'border-box'
+        });
+        btn.addEventListener('mouseenter', () => { if (contentSections[tab].style.display !== 'block') btn.style.background = '#36393f'; });
+        btn.addEventListener('mouseleave', () => { if (contentSections[tab].style.display !== 'block') btn.style.background = 'none'; });
+        btn.addEventListener('click', () => {
+            tabs.forEach(t => {
+                contentSections[t].style.display = 'none';
+                tabButtons[t].style.background = 'none';
+            });
+            contentSections[tab].style.display = 'block';
+            btn.style.background = '#40444b';
+            contentRenderers[tab]();
+        });
+        sidebar.appendChild(btn);
+        tabButtons[tab] = btn;
+
+        // Section
+        const section = document.createElement('div');
+        Object.assign(section.style, { display: idx === 0 ? 'block' : 'none', margin: '4px 0 0', padding: '2px 0 0', boxSizing: 'border-box', fontSize: '14px' });
+        contentArea.appendChild(section);
+        contentSections[tab] = section;
+    });
+
+    // Tab Init
+    contentRenderers.Home();
+    tabButtons.Home.style.background = '#40444b';
+
+    // Drag logic
+    let isDragging = false, offsetX = 0, offsetY = 0;
+    const mouseMove = (e) => { if (!isDragging) return; wrapper.style.left = `${e.clientX - offsetX}px`; wrapper.style.top = `${e.clientY - offsetY}px`; };
+    const mouseUp = () => isDragging = false;
+    titleBar.addEventListener('mousedown', (e) => { isDragging = true; offsetX = e.clientX - wrapper.offsetLeft; offsetY = e.clientY - wrapper.offsetTop; });
+    document.addEventListener('mousemove', mouseMove);
+    document.addEventListener('mouseup', mouseUp);
+
+    function insertLetter(text, letter) {
+        const regex = /<[^>]*>|:[^:]+:|https?:\/\/[^\s]+/gi;
+        let result = '';
+        let lastIndex = 0;
+
+        text.replace(regex, (match, offset) => {
+            const unprotectedPart = text.slice(lastIndex, offset);
+            result += unprotectedPart.split('').map(char => char + letter).join('');
+            result += match;
+            lastIndex = offset + match.length;
+        });
+
+        const remaining = text.slice(lastIndex);
+        result += remaining.split('').map(char => char + letter).join('');
+        return result;
+    }
+
+    // Center GUI function
+    window.centerGui = function() {
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const guiWidth = wrapper.offsetWidth;
+        const guiHeight = wrapper.offsetHeight;
+
+        // Calculate new position to center the wrapper
+        const newX = Math.max(0, (screenWidth - guiWidth) / 2);
+        const newY = Math.max(0, (screenHeight - guiHeight) / 2);
+
+        // Apply new position
+        wrapper.style.left = `${newX}px`;
+        wrapper.style.top = `${newY}px`;
+    }
+
+    // Center the GUI initially
+    window.centerGui();
+
+    // Re-center the GUI when the window is resized
+    window.addEventListener('resize', centerGui);
+})();
